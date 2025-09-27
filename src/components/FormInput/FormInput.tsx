@@ -1,18 +1,50 @@
-import React from 'react'
-import { FieldErrors, Path, UseFormRegister } from 'react-hook-form';
+import React from "react";
+import { FieldErrors, Path, UseFormRegister } from "react-hook-form";
 
 interface FormInputProps<T extends Record<string, any>> {
-  type: "text" | "password";
+  type: "text" | "password" | "image" | "textarea";
   placeholder?: string;
   register: UseFormRegister<T>;
   name: Path<T>;
   errors: FieldErrors<T>;
   disabled?: boolean;
+  label?: string;
+  labelRequired?: boolean;
 }
 
 function FormInput<T extends Record<string, any>>(props: FormInputProps<T>) {
-  return (
-    <div className="form-group mb-4">
+  const renderInput = () => {
+    if (props.type === "image") {
+      return (
+        <input
+          type="file"
+          accept="image/*"
+          multiple={false}
+          className={`form-control ${
+            props.errors[props.name] ? "is-invalid" : ""
+          }`}
+          placeholder={props.placeholder}
+          disabled={props.disabled}
+          {...props.register(props.name)}
+        />
+      );
+    }
+
+    if (props.type === "textarea") {
+      return (
+        <textarea
+          rows={4}
+          className={`form-control ${
+            props.errors[props.name] ? "is-invalid" : ""
+          }`}
+          placeholder={props.placeholder}
+          disabled={props.disabled}
+          {...props.register(props.name)}
+        ></textarea>
+      );
+    }
+
+    return (
       <input
         type={props.type}
         className={`form-control ${
@@ -22,14 +54,27 @@ function FormInput<T extends Record<string, any>>(props: FormInputProps<T>) {
         disabled={props.disabled}
         {...props.register(props.name)}
       />
+    );
+  };
+  return (
+    <div className="form-group mb-4">
+      {props.label && (
+        <label className="text-black" htmlFor={props.name}>
+          {props.label}{" "}
+          {props.labelRequired && <span className="text-danger">*</span>}
+        </label>
+      )}
+      {renderInput()}
       <div
         className={`text-danger ${props.errors ? "" : "hidden"}`}
         style={{ height: 8 }}
       >
-        <small>{(props.errors[props.name]?.message as string | null) ?? ""}</small>
+        <small>
+          {(props.errors[props.name]?.message as string | null) ?? ""}
+        </small>
       </div>
     </div>
   );
 }
 
-export default FormInput
+export default FormInput;

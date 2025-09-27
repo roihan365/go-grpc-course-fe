@@ -4,10 +4,10 @@ import PlainHeroSection from "../../components/PlainHeroSection/PlainHeroSection
 import ProductForm from "../../components/ProductForm/ProductForm";
 import useGrpcApi from "../../hooks/useGrpcApi";
 import { type ProductFormInputs } from "../../types/product";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import { useState } from "react";
-import { set } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { get, set } from "react-hook-form";
 
 interface UploadImageResponse {
   fileName: string;
@@ -15,34 +15,39 @@ interface UploadImageResponse {
   success: boolean;
 }
 
-function AdminCreateProduct() {
+
+
+function AdminEditProduct() {
+  const { id } = useParams();
+  const detailApi = useGrpcApi();
   const [uploadLoading, setUploadLoading] = useState<boolean>(false);
   const navigate = useNavigate();
   const productApi = useGrpcApi();
+  const [defaultValues, setDefaultValues] = useState<ProductFormInputs | undefined>(undefined);
+
+  useEffect(() => {
+    const fetchDetail = async () => {
+      const res = await detailApi.callApi(getProductClient().detailProduct({ id: id ?? "" }))
+
+      setDefaultValues({
+        name: res?.response?.name ?? "",
+        description: res?.response?.description ?? "",
+        price: res?.response?.price ?? 0,
+        image: "default.png",
+        // image: new DataTransfer().files,
+      });
+    }
+
+    fetchDetail();
+  }, []);
 
   const submitHandler = async (values: ProductFormInputs) => {
     try {
       setUploadLoading(true);
 
-      //   const formData = new FormData();
-      //   formData.append("file", values.image[0]);
-      //   const uploadRes = await axios.post<UploadImageResponse>(
-      //     "http://localhost:8080/product/upload",
-      //     formData
-      //   );
-
-      //   if (uploadRes.status !== 200) {
-      //     Swal.fire({
-      //       icon: "error",
-      //       title: "Gagal mengunggah gambar",
-      //       text: "Silakan coba lagi",
-      //       confirmButtonText: "Tutup",
-      //     });
-      //     return;
-      //   }
-
-      productApi.callApi(
-        getProductClient().createProduct({
+      const res = await productApi.callApi(
+        getProductClient().editProduct({
+          id: id ?? "",
           name: values.name,
           description: values.description ?? "",
           price: values.price,
@@ -63,6 +68,7 @@ function AdminCreateProduct() {
           useDefaultError: false,
         }
       );
+
 
       Swal.fire({
         icon: "success",
@@ -87,6 +93,8 @@ function AdminCreateProduct() {
               <ProductForm
                 onSubmit={submitHandler}
                 disabled={productApi.isLoading || uploadLoading}
+                defaultValues={defaultValues}
+                isEdit={true}
               />
             </div>
           </div>
@@ -96,4 +104,4 @@ function AdminCreateProduct() {
   );
 }
 
-export default AdminCreateProduct;
+export default AdminEditProduct;

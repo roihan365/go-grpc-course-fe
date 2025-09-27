@@ -1,31 +1,135 @@
-function ProductForm() {
-    return (
-        <div className="p-4 p-lg-5 border bg-white">
-            <div className="form-group mb-3">
-                <label className="text-black" htmlFor="product_name">Nama Produk <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" id="product_name" placeholder="Nama Produk" />
-            </div>
+import { yupResolver } from "@hookform/resolvers/yup";
+import { useForm } from "react-hook-form";
+import * as yup from "yup";
+import FormInput from "../FormInput/FormInput";
+import CurrencyInput from "../CurrencyInput/CurrencyInput";
+import { type ProductFormInputs } from "../../types/product";
+import { useEffect } from "react";
 
-            <div className="form-group mb-3">
-                <label className="text-black" htmlFor="product_price">Harga <span className="text-danger">*</span></label>
-                <input type="number" className="form-control" id="product_price" placeholder="Harga Produk" />
-            </div>
+const createProductSchema = yup.object().shape({
+  name: yup.string().required("Nama produk wajib diisi"),
+  description: yup.string(),
+  price: yup
+    .number()
+    .required("Harga produk wajib diisi")
+    .typeError("Harga produk tidak valid")
+    .moreThan(0, "Harga produk harus lebih dari 0"),
+  // image: yup
+  //   .mixed<FileList>()
+  //   .test(
+  //     "fileType",
+  //     "Unsupported file type (only JPEG, PNG, GIF)",
+  //     (fileList) =>
+  //       fileList && fileList.length > 0
+  //         ? ["image/jpeg", "image/png", "image/gif"].includes(fileList[0].type)
+  //         : true
+  //   ),
+  image: yup.string().optional(),
+});
 
-            <div className="form-group mb-3">
-                <label className="text-black" htmlFor="product_image">Gambar Produk <span className="text-danger">*</span></label>
-                <input type="file" className="form-control" id="product_image" accept="image/*" />
-            </div>
+const editProductSchema = yup.object().shape({
+  name: yup.string().required("Nama produk wajib diisi"),
+  description: yup.string(),
+  price: yup
+    .number()
+    .required("Harga produk wajib diisi")
+    .typeError("Harga produk tidak valid")
+    .moreThan(0, "Harga produk harus lebih dari 0"),
+  // image: yup
+  //   .mixed<FileList>()
+  //   .test(
+  //     "fileType",
+  //     "Unsupported file type (only JPEG, PNG, GIF)",
+  //     (fileList) =>
+  //       fileList && fileList.length > 0
+  //         ? ["image/jpeg", "image/png", "image/gif"].includes(fileList[0].type)
+  //         : true
+  //   ),
+  image: yup.string().optional(),
+});
 
-            <div className="form-group mb-4">
-                <label className="text-black" htmlFor="product_description">Deskripsi</label>
-                <textarea className="form-control" id="product_description" rows={4} placeholder="Deskripsi produk..."></textarea>
-            </div>
+interface ProductFormProps {
+  onSubmit: (values: ProductFormInputs) => void;
+  disabled?: boolean;
+  defaultValues?: ProductFormInputs;
+  isEdit?: boolean;
+}
 
-            <div className="form-group">
-                <button className="btn btn-primary">Simpan Produk</button>
-            </div>
+function ProductForm(props: ProductFormProps) {
+  const form = useForm<ProductFormInputs>({
+    resolver: yupResolver(
+      props.isEdit ? editProductSchema : createProductSchema
+    ),
+    defaultValues: props.defaultValues,
+  });
+
+  const submitHandler = async (values: ProductFormInputs) => {
+    props.onSubmit(values);
+  };
+
+  useEffect(() => {
+    if (props.defaultValues) {
+      form.reset(props.defaultValues);
+    }
+  }, [props.defaultValues]);
+  return (
+    <div className="p-4 p-lg-5 border bg-white">
+      <form onSubmit={form.handleSubmit(submitHandler)}>
+        <FormInput<ProductFormInputs>
+          name="name"
+          errors={form.formState.errors}
+          register={form.register}
+          type="text"
+          label="Nama Produk"
+          placeholder="Nama Produk"
+          labelRequired={true}
+          disabled={props.disabled}
+        />
+
+        <CurrencyInput<ProductFormInputs>
+          name="price"
+          errors={form.formState.errors}
+          control={form.control}
+          label="Harga Produk"
+          placeholder="Harga Produk"
+          labelRequired={true}
+          disabled={props.disabled}
+        />
+
+        <FormInput<ProductFormInputs>
+          name="description"
+          errors={form.formState.errors}
+          register={form.register}
+          type="textarea"
+          label="Deskripsi"
+          placeholder="Deskripsi Produk"
+          labelRequired={true}
+          disabled={props.disabled}
+        />
+
+        {/* <FormInput<ProductFormInputs>
+          name="image"
+          errors={form.formState.errors}
+          register={form.register}
+          type="image"
+          label="Gambar Produk"
+          placeholder="Gambar Produk"
+          labelRequired={false}
+          disabled={props.disabled}
+        /> */}
+
+        <div className="form-group">
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={props.disabled}
+          >
+            Simpan Produk
+          </button>
         </div>
-    )
+      </form>
+    </div>
+  );
 }
 
 export default ProductForm;
